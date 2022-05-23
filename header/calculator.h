@@ -28,17 +28,26 @@ public: // Constructors
 public: // Main Functions
 
 
-    void calculateExpression(std::string userInput){
+    int calculateExpression(std::string userInput){
         _userExpression = userInput;
+        // Working at O(n)
         tokenizeStr();
+        // Working at O(n)
         addParenthesis();
+        // Working at O(n)
         constructExpression();
-        print_token();
+        // Working at O(n)
+        convertToPostfix();
+        // WOrking at O(n)
+        return solveExpression();
+    }
+
+    int calculateEquation(){
+        
     }
 
 private: // auxillary functions
 
-    // Working at O(n)
     void tokenizeStr(){
         std::string digitStr = "";
         for(int i = 0; i < _userExpression.length(); ++i){
@@ -48,7 +57,7 @@ private: // auxillary functions
                 digitStr += input;
             }else if(isOperator(input)){
                 // push the digit
-                _tokenizeValue.push_back(digitStr);
+                _tokenizeValue.push_back(digitStr + ';');
 
                 // reset the digit
                 digitStr = "";
@@ -63,7 +72,7 @@ private: // auxillary functions
                 digitStr = "";
             }else if(isVariable(input)){
                 // push the digits
-                _tokenizeValue.push_back(digitStr);
+                _tokenizeValue.push_back(digitStr + ';');
 
                 // reset the digit
                 digitStr = "";
@@ -84,11 +93,10 @@ private: // auxillary functions
             }
         }
         if(digitStr.length()){
-            _tokenizeValue.push_back(digitStr);
+            _tokenizeValue.push_back(digitStr +  ';');
         }
     }
 
-    // Should Take O(n)
     void addParenthesis(){
         bool previousMD = false;
         for(int i = 0; i < _tokenizeOperator.size(); ++i){
@@ -112,6 +120,88 @@ private: // auxillary functions
         }
         _userExpression = tempExpression;
     }
+
+    void convertToPostfix(){
+        std::stack<char> st;
+        std::string result;
+        for (int i = 0; i < _userExpression.length(); i++) {
+            char c = _userExpression[i];
+            if(c == ' '){
+                // do nothing
+            }else if (isVariable(c) || isDigit(c) || c == ';'){
+                result += c;
+            }
+            else if (c == '('){
+                st.push('(');
+            }
+            else if (c == ')') {
+                while (st.top() != '(') {
+                    result += st.top();
+                    st.pop();
+                }
+                st.pop();
+            }
+            else {
+                while (!st.empty()
+                    && getPrecedency(_userExpression[i]) <= getPrecedency(st.top())) {
+                    if (c == '^' && st.top() == '^')
+                        break;
+                    else {
+                        result += st.top();
+                        st.pop();
+                    }
+                }
+                st.push(c);
+            }
+        }
+        while (!st.empty()) {
+            result += st.top();
+            st.pop();
+        }
+        _userExpression = result;
+    }
+
+    int solveExpression(){
+        std::stack<int> values;
+        std::string tempValues;
+        for(int i = 0; i < _userExpression.length(); ++i){
+            char value = _userExpression[i];
+            if(value == ';'){
+                try{
+                    values.push(std::stoi(tempValues));
+                }catch(...){
+                    std::cout << "Error When Converting Value";
+                }
+                tempValues = "";
+            }else{
+                if(isDigit(value)){
+                    tempValues += value;
+                }else if(isOperator(value)){
+                    int lhs = values.top();
+                    values.pop();
+                    int rhs = values.top();
+                    values.pop();
+
+                    if(value == '+'){
+                        values.push(add(rhs,lhs));
+                    }else if(value == '-'){
+                        values.push(sub(rhs,lhs));
+                    }else if(value == '*'){
+                        values.push(mul(rhs,lhs));
+                    }else if(value == '/'){
+                        values.push(div(rhs,lhs));
+                    }else if(value == '^'){
+                        values.push(pow(rhs,lhs));
+                    }
+                }
+            }
+        }
+        int result = values.top();
+        values.pop();
+        return result;
+    }
+
+private: // auxillary functions
 
     bool isDigit(char value){
         switch (value)
@@ -153,23 +243,27 @@ private: // auxillary functions
     bool isOperator(char value){
         switch (value)
         {
-        case '+':
-            return true;
-            break;
-        case '-':
-            return true;
-            break;
-        case '*':
-            return true;
-            break;
+        // P E MD AS
         case '/':
-            return true;
-            break;
-        case '^':
+        case '-':
+        case '+':
+        case '*':
+        case '(':
             return true;
             break;
         }
         return false;
+    }
+
+    int getPrecedency(char vOperator){
+        if (vOperator == '^')
+            return 3;
+        else if (vOperator == '/' || vOperator == '*')
+            return 2;
+        else if (vOperator == '+' || vOperator == '-')
+            return 1;
+        else
+            return -1;
     }
 
     bool isVariable(char value){
@@ -182,6 +276,31 @@ private: // auxillary functions
         return false;
     }
 
+
+private: // operations
+    int add(int a, int b){
+        return a + b;
+    }
+
+    int sub(int a, int b){
+        return a - b;
+    }
+
+    int mul(int a, int b){
+        return a * b;
+    }
+
+    int div(int a, int b){
+        return a/b;
+    }
+
+    int pow(int a, int b){
+        int value = a;
+        for(int i = 0; i < b; ++i){
+            value *= a;
+        }
+        return value;
+    }
 
 private: // debug
     void print_token(){

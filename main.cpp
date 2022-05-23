@@ -2,6 +2,8 @@
 
 int main(){
     Calculator _calc;
-    _calc.calculateExpression("3 + 2 / 4 * 8 + 2 * 3");
+    std::string expression = "32 + 44 / 2 * 8 + 223 * 3";
+    int answer = _calc.calculateExpression(expression);
+    std::cout << expression << " = " << answer << std::endl;
     return 0;
 }
