@@ -8,15 +8,6 @@
 #include <vector>
 #include <algorithm>
 
-// No need to be separated by spaces
-
-/**
- * Solving Expression
- * 1.) Tokenize and Separate the values and operators
- * 2.) Add Parenthesis
- * 3.) Convert the Infix to postfix
- * 4.) Solve it using stack
- */
 
 class BinaryTree{
 
@@ -31,21 +22,27 @@ private:
 public:
     BinaryTree(){
         _head = nullptr;
+        _isRight = false;
     }
 
     void pushValue(std::string value){
 
         Node *tempNode = _head;
+        if(_isRight){
+            if(tempNode->right == nullptr){
+                tempNode->right =  createNewNode(value, _head);
+            }else{
+                tempNode = tempNode->right;
+            }
+        }
         // Go as far right as possible
         while(tempNode->right != nullptr){
             tempNode = tempNode->right;
         }
-
         // if it's not an operator
         if(!isOperatorStr(tempNode->value)){
             tempNode = traverseFindOperator(tempNode);
         }
-        
         if(tempNode->left == nullptr){
             tempNode->left = createNewNode(value, tempNode);
         }else{
@@ -78,6 +75,7 @@ public:
 
     void pushEqual(std::string equalValue){
         _head = createNewNode(equalValue, nullptr, _head);
+        _isRight = true;
     }
 
 
@@ -220,6 +218,10 @@ private:
 
 private:
 
+    bool isEqual(std::string str){
+        return str == "=";
+    }
+
     int solveValue(std::string value,int lhs, int rhs){
         if(value == "+"){
             return add(lhs,rhs);
@@ -251,6 +253,7 @@ private:
 
 private:
     Node *_head;
+    bool _isRight;
 
 };
 
@@ -264,7 +267,7 @@ public: // Constructors
 public: // Main Functions
 
 
-    int calculateExpression(std::string userInput){
+    int calculate(std::string userInput){
         _userInput = userInput;
 
         // Working at O(n)
@@ -272,7 +275,7 @@ public: // Main Functions
         // Working at O(n)
         addParenthesis();
         // Working at O(n)
-        constructExpression();
+        constructMathStatement();
         // Working at O(n)
         _userInput = convertToPrefix(_userInput);
         // Working at O(n)
@@ -303,8 +306,10 @@ private: // auxillary functions
         for(int i = 0; i < _userInput.length(); ++i){
             char value = _userInput[i];
             if(value == ';'){
-                _tree->pushValue(temp);
-                temp = "";
+                if(temp.length() != 0){
+                    _tree->pushValue(temp);
+                    temp = "";
+                }
             }else if(isOperator(value)){
                 temp = "";
                 temp+=value;
@@ -328,7 +333,13 @@ private: // auxillary functions
             if(isDigit(input)){
                 // accumulate the digit in a single string;
                 digitStr += input;
-            }else if(isOperator(input)){
+            }else if(isOperator(input) || isEqual(input)){
+
+                if(digitStr.empty()){
+                    digitStr += input;
+                    continue;
+                }
+
                 // push the digit
                 _lTokenizeValue.push_back(digitStr + ';');
 
@@ -357,6 +368,7 @@ private: // auxillary functions
     }
 
     void addParenthesis(){
+        // Maybe try to put parenthesis with those that have sign
         bool previousMD = false;
         for(int i = 0; i < _lTokenizeOperator.size(); ++i){
             if((_lTokenizeOperator[i] == "*" || _lTokenizeOperator[i] == "/") && previousMD == false){
@@ -369,7 +381,7 @@ private: // auxillary functions
         }
     }
 
-    void constructExpression(){
+    void constructMathStatement(){
         std::string tempExpression = "";
         for(int valueIndex = 0, operatorIndex = 0; valueIndex < _lTokenizeValue.size(); ++valueIndex){
             if(valueIndex >= 1){
@@ -526,6 +538,10 @@ private: // auxillary functions
                 break;
         }
         return false;
+    }
+
+    bool isEqual(char value){
+        return value == '=';
     }
 
     bool isOperator(char value){
