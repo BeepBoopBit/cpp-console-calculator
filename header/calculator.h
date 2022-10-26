@@ -9,6 +9,14 @@
 #include <algorithm>
 
 
+/**
+ * Since we tokenize it 
+ * We have the operators
+ * We have the values
+ * then just use that to make a tree
+ * it'll be faster than converting it to infix first
+ */
+
 class BinaryTree{
 
 private:
@@ -273,11 +281,11 @@ public: // Main Functions
         // Working at O(n)
         tokenizeStr();
         // Working at O(n)
-        addParenthesis();
+        //addParenthesis();
         // Working at O(n)
         constructMathStatement();
         // Working at O(n)
-        _userInput = convertToPrefix(_userInput);
+        //_userInput = convertToPrefix(_userInput);
         // Working at O(n)
         makeTree();
 
@@ -302,35 +310,53 @@ private: // auxillary functions
     }
 
     void makeTree(){
+
         std::string temp;
-        for(int i = 0; i < _userInput.length(); ++i){
-            char value = _userInput[i];
-            if(value == ';'){
-                if(temp.length() != 0){
-                    _tree->pushValue(temp);
-                    temp = "";
-                }
-            }else if(isOperator(value)){
-                temp = "";
-                temp+=value;
-                _tree->pushOperator(temp);
-                temp = "";
-            }else if(isVariable(value) || isDigit(value)){
-                temp += value;
-            }else if(value == '='){
-                temp = "";
-                temp+=value;
-                _tree->pushEqual(temp);
-                temp = "";
-            }
+        for(int i = 0, val = 0; i < _lTokenizeOperator.size(); ++i, ++val){
+            _lTokenizeValue[val].pop_back();
+            _lTokenizeValue[val+1].pop_back();
+
+            _tree->pushOperator(_lTokenizeOperator[i]);
+            _tree->pushValue(_lTokenizeValue[val++]);
+            _tree->pushValue(_lTokenizeValue[val]);
         }
+
+        // problem with making a tree when there is a sign
+        //std::string temp;
+        //for(int i = 0; i < _userInput.length(); ++i){
+        //    char value = _userInput[i];
+        //    if(value == ';'){
+        //        if(temp.length() != 0){
+        //            _tree->pushValue(temp);
+        //            temp = "";
+        //        }
+        //    }else if(isOperator(value)){
+        //        if(isOperator(temp.back())){
+        //            temp += value;
+        //        }else{
+        //            temp = "";
+        //            temp+=value;
+        //            _tree->pushOperator(temp);
+        //            temp = "";
+        //        }
+        //    }else if(isVariable(value) || isDigit(value)){
+        //        temp += value;
+        //    }else if(value == '='){
+        //        temp = "";
+        //        temp+=value;
+        //        _tree->pushEqual(temp);
+        //        temp = "";
+        //    }
+        //}
     }
 
     void tokenizeStr(){
         std::string digitStr = "";
         for(int i = 0; i < _userInput.length(); ++i){
             char input = _userInput[i];
-            if(isDigit(input)){
+             if(input == ' '){
+                // do nothing
+            }else if(isDigit(input)){
                 // accumulate the digit in a single string;
                 digitStr += input;
             }else if(isOperator(input) || isEqual(input)){
@@ -354,8 +380,6 @@ private: // auxillary functions
 
                 // reset the digit
                 digitStr = "";
-            }else if(input == ' '){
-                // do nothing
             }
             else{
                 std::cout << "Unknown Token: " << _userInput[i] << std::endl;
@@ -371,6 +395,7 @@ private: // auxillary functions
         // Maybe try to put parenthesis with those that have sign
         bool previousMD = false;
         for(int i = 0; i < _lTokenizeOperator.size(); ++i){
+            //_lTokenizeValue[i] = '(' + _lTokenizeValue[i] + ')';
             if((_lTokenizeOperator[i] == "*" || _lTokenizeOperator[i] == "/") && previousMD == false){
                 _lTokenizeValue[i] = '(' + _lTokenizeValue[i];
                 _lTokenizeValue[i+1] =  _lTokenizeValue[i+1] + ')';
@@ -401,11 +426,9 @@ private: // auxillary functions
     
             if (userInput[i] == '(') {
                 userInput[i] = ')';
-                i++;
             }
             else if (userInput[i] == ')') {
                 userInput[i] = '(';
-                i++;
             }
         }
     
@@ -438,16 +461,21 @@ private: // auxillary functions
                 st.pop();
             }
             else {
-                while (!st.empty()
-                    && getPrecedency(userInput[i]) <= getPrecedency(st.top())) {
-                    if (c == '^' && st.top() == '^')
-                        break;
-                    else {
-                        result += st.top();
-                        st.pop();
+                // if the next value is operator, then it means that the current character is a sign
+                if((userInput.length() < i+1 && isOperator(userInput[i+1])) || (i == userInput.length()-1 && isOperator(userInput[i]))){
+                    result += c;
+                }else{
+                    while (!st.empty()
+                        && getPrecedency(userInput[i]) <= getPrecedency(st.top())) {
+                        if (c == '^' && st.top() == '^')
+                            break;
+                        else {
+                            result += st.top();
+                            st.pop();
+                        }
                     }
+                    st.push(c);
                 }
-                st.push(c);
             }
         }
         while (!st.empty()) {
@@ -455,9 +483,6 @@ private: // auxillary functions
             st.pop();
         }
         return result;
-    }
-
-    void convertToTree(){
     }
 
     int solveExpression(){
